@@ -1,23 +1,10 @@
-# Use Go 1.23 bookworm as base image
-FROM golang:latest AS base
-
-# Move to working directory /build
-WORKDIR /build
-
-# Copy the go.mod and go.sum files to the /build directory
-COPY go.mod go.sum ./
-
-# Install dependencies
-RUN go mod download
-
-# Copy the entire source code into the container
+FROM golang:alpine AS builder
+WORKDIR /src/app
 COPY . .
-
-# Build the application
-RUN go build -o picture_perfect
-
-# Document the port that may need to be published
-EXPOSE 3000
-
-# Start the application
-CMD ["/build/picture_perfect"]
+RUN go build -o server
+FROM alpine
+WORKDIR /root/
+RUN mkdir pictures
+COPY --from=builder /src/app ./app
+COPY --from=builder /src/app/templates ./templates
+CMD ["./app/server"]

@@ -178,8 +178,14 @@
   .pointer-events-none {
     pointer-events: none;
   }
+  .collapse {
+    visibility: collapse;
+  }
   .absolute {
     position: absolute;
+  }
+  .static {
+    position: static;
   }
   .z-10 {
     z-index: 10;
@@ -220,11 +226,20 @@
   .box-border {
     box-sizing: border-box;
   }
+  .block {
+    display: block;
+  }
   .contents {
     display: contents;
   }
   .flex {
     display: flex;
+  }
+  .inline {
+    display: inline;
+  }
+  .table {
+    display: table;
   }
   .size-60 {
     width: calc(var(--spacing) * 60);
@@ -235,6 +250,9 @@
   }
   .w-64 {
     width: calc(var(--spacing) * 64);
+  }
+  .grow {
+    flex-grow: 1;
   }
   .transform {
     transform: var(--tw-rotate-x,) var(--tw-rotate-y,) var(--tw-rotate-z,) var(--tw-skew-x,) var(--tw-skew-y,);
@@ -247,6 +265,11 @@
   }
   .justify-center {
     justify-content: center;
+  }
+  .truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .overflow-hidden {
     overflow: hidden;

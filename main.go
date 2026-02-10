@@ -67,11 +67,11 @@ func main() {
 		tmpl.ExecuteTemplate(ctx.Writer, "settings.html", nil)
 	})
 
-	router.GET("/pic/:name", func(ctx *gin.Context) {
+	router.GET("/pic/*name", func(ctx *gin.Context) {
 		name := ctx.Param("name")
 		tmpl.ExecuteTemplate(ctx.Writer, "pic.html", Image{
 			Name: name,
-			Path: "pictures/" + name,
+			Path: name,
 		})
 	})
 
@@ -83,11 +83,8 @@ func main() {
 	router.Run(":3000")
 }
 
-// getImages reads all image files from a directory
-func getImages(dir string) ([]Image, error) {
-	var images []Image
-
-	// Supported image extensions
+func getImageRec(dir string, images []Image) ([]Image, error) {
+   	// Supported image extensions
 	imageExtensions := map[string]bool{
 		".jpg":  true,
 		".jpeg": true,
@@ -96,34 +93,52 @@ func getImages(dir string) ([]Image, error) {
 		".bmp":  true,
 		".webp": true,
 	}
-
+   
 	// Read directory contents
 	files, err := os.ReadDir(dir)
 	if err != nil {
 		return images, err
 	}
-
+   
 	// Process each file
 	for _, file := range files {
+   
+		name := file.Name()
 		// Skip directories
 		if file.IsDir() {
+		    dirimages, err := getImages(filepath.Join(dir, name))
+			if err != nil {
+				return images, nil	
+			}
+			images = append(images, dirimages...)
 			continue
 		}
-
+   
+		if name[0] == '.' {
+			continue
+		}
+   
 		// Check if file has an image extension
-		ext := strings.ToLower(filepath.Ext(file.Name()))
+		ext := strings.ToLower(filepath.Ext(name))
 		if imageExtensions[ext] {
 			// Create image object
 			img := Image{
-				Name: file.Name(),
-				Path: filepath.Join(dir, file.Name()),
-				URL:  filepath.Join(dir, file.Name()), // In a real app, this would be a web URL
+				Name: name,
+				Path: filepath.Join(dir, name),
+				URL:  filepath.Join(dir, name), // In a real app, this would be a web URL
 			}
 			images = append(images, img)
 		}
 	}
-
+   
 	return images, nil
+}
+
+// getImages reads all image files from a directory
+func getImages(dir string) ([]Image, error) {
+	var images []Image
+
+	return getImageRec(dir, images)
 }
 
 func parseTemplates() *template.Template {
