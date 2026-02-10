@@ -1,12 +1,11 @@
-    {{range .Images}}
-    <div class="m-1">
-        <img
-            class="size-60 object-cover hover:size-62"
-            src="../{{.Path}}"
-            alt="{{.Name}}"
-            hx-get="/pic/{{.Name}}"
-            hx-target="#content"
-            
-        />
-    </div>
-    {{end}}
+{{range .Images}}
+<div class="m-1">
+    <img
+        class="size-60 object-cover hover:size-62"
+        src="../{{.Path}}"
+        alt="{{.Name}}"
+        hx-get="/pic/{{.Name}}"
+        hx-target="#content"
+    />
+</div>
+{{end}}

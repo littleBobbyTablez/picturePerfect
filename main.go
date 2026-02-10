@@ -48,6 +48,21 @@ func main() {
 		tmpl.ExecuteTemplate(ctx.Writer, "upload.html", nil)
 	})
 
+	router.POST("/rescan", func(ctx *gin.Context) {
+		var err2 error
+		images, err2 = getImages("./pictures")
+		if err2 != nil {
+			log.Printf("Could not reload: %s", err2.Error())
+			ctx.Status(400)
+		}
+
+		galleryData = GalleryData{
+			Images: images,
+			Title:  "Gallery",
+		}
+		ctx.Status(200)
+	})
+
 	router.GET("/settings", func(ctx *gin.Context) {
 		tmpl.ExecuteTemplate(ctx.Writer, "settings.html", nil)
 	})
