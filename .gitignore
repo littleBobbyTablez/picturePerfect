@@ -1,0 +1,6 @@
+/node_modules
+/tmp
+package.json
+package-lock.json
+.idea/
+/pictures

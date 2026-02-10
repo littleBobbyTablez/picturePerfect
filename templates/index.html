@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>title</title>
+        <link rel="stylesheet" href="/output.css" />
+        <script
+            src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"
+            integrity="sha384-/TgkGk7p307TH7EXJDuUlgG3Ce1UVolAOFopFekQkkXihi5u/6OCvVKyz1W+idaz"
+            crossorigin="anonymous"
+        ></script>
+        <script src="https://unpkg.com/hyperscript.org@0.9.14"></script>
+    </head>
+    <body>
+        <header class="m-10 text-3xl">Picture perfect</header>
+        <nav class="flex justify-center m-5">
+            <a
+                class="m-2"
+                href="/gallery"
+                hx-get="/gallery"
+                hx-target="#content"
+                >gallery</a
+            >
+            <a class="m-2" href="/upload" hx-get="/upload" hx-target="#content"
+                >upload</a
+            >
+            <a
+                class="m-2"
+                href="/settings"
+                hx-get="/settings"
+                hx-target="#content"
+                >settings</a
+            >
+        </nav>
+        <div
+            id="content"
+            class="flex justify-center m-1"
+            hx-get="/gallery"
+            hx-trigger="load"
+        >
+            some content
+        </div>
+    </body>
+</html>
