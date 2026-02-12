@@ -1,12 +1,15 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"html/template"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
+
+	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,10 +18,8 @@ import (
 type Image struct {
 	Name string
 	Path string
-	URL  string
 }
 
-// GalleryData holds the data for our template
 type GalleryData struct {
 	Images []Image
 	Title  string
@@ -26,10 +27,14 @@ type GalleryData struct {
 
 func main() {
 
+	db := connectDb()
+	defer db.Close()
+	initDb(db)
+
 	router := gin.Default()
 	tmpl := parseTemplates()
 
-	images, _ := getImages("./pictures")
+	images, _ := loadImages(db)
 
 	galleryData := GalleryData{
 		Images: images,
@@ -50,7 +55,7 @@ func main() {
 
 	router.POST("/rescan", func(ctx *gin.Context) {
 		var err2 error
-		images, err2 = getImages("./pictures")
+		images, err2 = scanImages("./pictures", db)
 		if err2 != nil {
 			log.Printf("Could not reload: %s", err2.Error())
 			ctx.Status(400)
@@ -83,8 +88,7 @@ func main() {
 	router.Run(":3000")
 }
 
-func getImageRec(dir string, images []Image) ([]Image, error) {
-   	// Supported image extensions
+func scanImageRec(dir string, images []Image, db *sql.DB) ([]Image, error) {
 	imageExtensions := map[string]bool{
 		".jpg":  true,
 		".jpeg": true,
@@ -93,52 +97,78 @@ func getImageRec(dir string, images []Image) ([]Image, error) {
 		".bmp":  true,
 		".webp": true,
 	}
-   
-	// Read directory contents
+
 	files, err := os.ReadDir(dir)
 	if err != nil {
 		return images, err
 	}
-   
-	// Process each file
+
 	for _, file := range files {
-   
+
 		name := file.Name()
-		// Skip directories
 		if file.IsDir() {
-		    dirimages, err := getImages(filepath.Join(dir, name))
+			dirimages, err := scanImages(filepath.Join(dir, name), db)
 			if err != nil {
-				return images, nil	
+				return images, nil
 			}
 			images = append(images, dirimages...)
 			continue
 		}
-   
+
 		if name[0] == '.' {
 			continue
 		}
-   
-		// Check if file has an image extension
+
 		ext := strings.ToLower(filepath.Ext(name))
 		if imageExtensions[ext] {
-			// Create image object
 			img := Image{
 				Name: name,
 				Path: filepath.Join(dir, name),
-				URL:  filepath.Join(dir, name), // In a real app, this would be a web URL
 			}
+
+			_, err := db.Exec(`
+			        INSERT OR IGNORE INTO pictures (path) VALUES (?)
+
+			`, filepath.Join(dir, name))
+			if err != nil {
+				panic(err)
+			}
+
 			images = append(images, img)
 		}
 	}
-   
+
 	return images, nil
 }
 
-// getImages reads all image files from a directory
-func getImages(dir string) ([]Image, error) {
+func scanImages(dir string, db *sql.DB) ([]Image, error) {
 	var images []Image
 
-	return getImageRec(dir, images)
+	return scanImageRec(dir, images, db)
+}
+
+func loadImages(db *sql.DB) ([]Image, error) {
+	var images []Image
+
+	rows, err := db.Query("SELECT path from pictures;")
+	if err != nil {
+        log.Printf("Error while loading pictures: %s", err.Error())
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var image Image
+		var path string
+		if err := rows.Scan(&path); err != nil {
+		    log.Printf("Error: %s", err.Error())
+		}
+		image.Path = path
+		split := strings.Split(path, "/")
+		image.Name = split[len(split)-1]
+		images = append(images, image)
+	}
+
+	return images, err
 }
 
 func parseTemplates() *template.Template {
@@ -159,4 +189,29 @@ func parseTemplates() *template.Template {
 	}
 
 	return templ
+}
+
+func connectDb() *sql.DB {
+	db, err := sql.Open("sqlite3", "pictures.db")
+	if err != nil {
+		log.Panic(err)
+	}
+
+	return db
+}
+
+func initDb(db *sql.DB) {
+
+	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS pictures (
+            id INTEGER PRIMARY KEY,
+            path TEXT NOT NULL,
+            UNIQUE(path)
+            );`)
+	if err != nil {
+		log.Printf("Error: %s", err.Error())
+	} else {
+		log.Printf("Result: No error")
+	}
+
+	scanImages("./pictures", db)
 }

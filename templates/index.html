@@ -13,7 +13,7 @@
     </head>
     <body>
         <header class="m-10 text-3xl">Picture perfect</header>
-        <nav class="flex justify-center m-5">
+        <nav class="flex justify-center m-5 text-2xl">
             <a
                 class="m-2"
                 href="/gallery"
@@ -21,9 +21,11 @@
                 hx-target="#content"
                 >gallery</a
             >
+            <div class="m-2">|</div>
             <a class="m-2" href="/upload" hx-get="/upload" hx-target="#content"
                 >upload</a
             >
+            <div class="m-2">|</div>
             <a
                 class="m-2"
                 href="/settings"
@@ -32,12 +34,7 @@
                 >settings</a
             >
         </nav>
-        <div
-            id="content"
-            class="flex justify-center m-1"
-            hx-get="/gallery"
-            hx-trigger="load"
-        >
+        <div id="content" class="m-1" hx-get="/gallery" hx-trigger="load">
             some content
         </div>
     </body>
