@@ -16,8 +16,8 @@
         <nav class="flex justify-center m-5 text-2xl">
             <a
                 class="m-2"
-                href="/gallery"
-                hx-get="/gallery"
+                href="/gallery/pictures"
+                hx-get="/gallery/pictures"
                 hx-target="#content"
                 >gallery</a
             >
@@ -34,7 +34,12 @@
                 >settings</a
             >
         </nav>
-        <div id="content" class="m-1" hx-get="/gallery" hx-trigger="load">
+        <div
+            id="content"
+            class="m-1"
+            hx-get="/gallery/pictures"
+            hx-trigger="load"
+        >
             some content
         </div>
     </body>

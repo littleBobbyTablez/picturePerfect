@@ -19,9 +19,15 @@ type Image struct {
 	Path string
 }
 
+type Directory struct {
+	Name string
+	Path string
+}
+
 type GalleryData struct {
-	Images []Image
-	Title  string
+	Images      []Image
+	Directories []Directory
+	Title       string
 }
 
 func main() {
@@ -33,18 +39,31 @@ func main() {
 	router := gin.Default()
 	tmpl := parseTemplates()
 
-	images, _ := loadImages(db)
+	//images, dirs, _ := loadImages("pictures", db)
 
 	galleryData := GalleryData{
-		Images: images,
-		Title:  "Gallery",
+		Images:      nil,
+		Directories: nil,
+		Title:       "Gallery",
 	}
 
 	router.GET("/", func(c *gin.Context) {
 		tmpl.ExecuteTemplate(c.Writer, "index.html", nil)
 	})
 
-	router.GET("/gallery", func(ctx *gin.Context) {
+	router.GET("/gallery/*dir", func(ctx *gin.Context) {
+		dir := ctx.Param("dir")
+
+		images, subdirs, err := loadImages(dir, db)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		galleryData = GalleryData{
+			Images:      images,
+			Directories: subdirs,
+			Title:       dir,
+		}
 		tmpl.ExecuteTemplate(ctx.Writer, "gallery.html", galleryData)
 	})
 
@@ -54,16 +73,12 @@ func main() {
 
 	router.POST("/rescan", func(ctx *gin.Context) {
 		var err2 error
-		images, err2 = scanImages("./pictures", db)
+		galleryData.Images, galleryData.Directories, err2 = scanImages("pictures", db)
 		if err2 != nil {
 			log.Printf("Could not reload: %s", err2.Error())
 			ctx.Status(400)
 		}
 
-		galleryData = GalleryData{
-			Images: images,
-			Title:  "Gallery",
-		}
 		ctx.Status(200)
 	})
 
@@ -87,7 +102,7 @@ func main() {
 	router.Run(":3000")
 }
 
-func scanImageRec(dir string, images []Image, db *sql.DB) ([]Image, error) {
+func scanImageRec(dir string, images []Image, directories []Directory, db *sql.DB) ([]Image, []Directory, error) {
 	imageExtensions := map[string]bool{
 		".jpg":  true,
 		".jpeg": true,
@@ -97,19 +112,30 @@ func scanImageRec(dir string, images []Image, db *sql.DB) ([]Image, error) {
 		".webp": true,
 	}
 
-	files, err := os.ReadDir(dir)
+	files, err := os.ReadDir("." + dir)
 	if err != nil {
-		return images, err
+		return images, directories, err
 	}
 
 	for _, file := range files {
 
 		name := file.Name()
 		if file.IsDir() {
-			dirimages, err := scanImages(filepath.Join(dir, name), db)
-			if err != nil {
-				return images, nil
+
+			directory := Directory{
+				Name: file.Name(),
+				Path: dir,
 			}
+			directories = append(directories, directory)
+			insertImageOrDir(name, dir, true, db)
+
+			subpath := filepath.Join(dir, name)
+
+			dirimages, subdirectories, err := scanImages(subpath, db)
+			if err != nil {
+				return images, directories, nil
+			}
+			directories = append(directories, subdirectories...)
 			images = append(images, dirimages...)
 			continue
 		}
@@ -122,52 +148,68 @@ func scanImageRec(dir string, images []Image, db *sql.DB) ([]Image, error) {
 		if imageExtensions[ext] {
 			img := Image{
 				Name: name,
-				Path: filepath.Join(dir, name),
+				Path: dir,
 			}
 
-			_, err := db.Exec(`
-			        INSERT OR IGNORE INTO pictures (path) VALUES (?)
-
-			`, filepath.Join(dir, name))
-			if err != nil {
-				panic(err)
-			}
+			insertImageOrDir(name, dir, false, db)
 
 			images = append(images, img)
 		}
 	}
 
-	return images, nil
+	return images, directories, nil
 }
 
-func scanImages(dir string, db *sql.DB) ([]Image, error) {
+func scanImages(dir string, db *sql.DB) ([]Image, []Directory, error) {
 	var images []Image
+	var directory []Directory
 
-	return scanImageRec(dir, images, db)
+	return scanImageRec(dir, images, directory, db)
 }
 
-func loadImages(db *sql.DB) ([]Image, error) {
-	var images []Image
+func insertImageOrDir(name string, dir string, isDir bool, db *sql.DB) {
+	_, err := db.Exec(`
+			        INSERT OR IGNORE INTO pictures (path, name, isDir) VALUES (?, ?, ?)
 
-	rows, err := db.Query("SELECT path from pictures;")
+			`, dir, name, isDir)
 	if err != nil {
-        log.Printf("Error while loading pictures: %s", err.Error())
+		panic(err)
+	}
+}
+
+func loadImages(loadPath string, db *sql.DB) ([]Image, []Directory, error) {
+	var images []Image
+	var directories []Directory
+
+	q := fmt.Sprintf("SELECT path, name, isDir from pictures where path='%s';", loadPath)
+	rows, err := db.Query(q)
+	if err != nil {
+		log.Printf("Error while loading pictures: %s", err.Error())
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		var image Image
 		var path string
-		if err := rows.Scan(&path); err != nil {
-		    log.Printf("Error: %s", err.Error())
+		var name string
+		var isDir bool
+		if err := rows.Scan(&path, &name, &isDir); err != nil {
+			log.Printf("Error: %s", err.Error())
 		}
-		image.Path = path
-		split := strings.Split(path, "/")
-		image.Name = split[len(split)-1]
-		images = append(images, image)
+		if isDir {
+			var directory Directory
+			directory.Name = name
+			directory.Path = path
+			directories = append(directories, directory)
+		} else {
+			var image Image
+			image.Path = path
+			image.Name = name
+			images = append(images, image)
+
+		}
 	}
 
-	return images, err
+	return images, directories, err
 }
 
 func parseTemplates() *template.Template {
@@ -204,7 +246,9 @@ func initDb(db *sql.DB) {
 	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS pictures (
             id INTEGER PRIMARY KEY,
             path TEXT NOT NULL,
-            UNIQUE(path)
+            name TEXT NOT NULL,
+            isDir INTEGER NOT NULL,
+            UNIQUE(path, name)
             );`)
 	if err != nil {
 		log.Printf("Error: %s", err.Error())
@@ -212,5 +256,5 @@ func initDb(db *sql.DB) {
 		log.Printf("Result: No error")
 	}
 
-	scanImages("./pictures", db)
+	scanImages("/pictures", db)
 }
