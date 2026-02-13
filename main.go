@@ -14,7 +14,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Image represents a single image file
 type Image struct {
 	Name string
 	Path string
