@@ -1,9 +1,9 @@
 <div class="m-1 flex flex-wrap justify-center">
     <img
         class="flex-1/2"
-        src="{{.Path}}"
+        src="{{.Path}}/{{.Name}}"
         alt="{{.Name}}"
-        hx-get="/gallery/pictures"
+        hx-get="/gallery{{.Path}}"
         hx-target="#content"
     />
 </div>

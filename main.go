@@ -28,6 +28,8 @@ type GalleryData struct {
 	Images      []Image
 	Directories []Directory
 	Title       string
+	Parent      string
+	IsBase      bool
 }
 
 func main() {
@@ -39,12 +41,12 @@ func main() {
 	router := gin.Default()
 	tmpl := parseTemplates()
 
-	//images, dirs, _ := loadImages("pictures", db)
-
 	galleryData := GalleryData{
 		Images:      nil,
 		Directories: nil,
 		Title:       "Gallery",
+		Parent:      "/pictures",
+		IsBase:      true,
 	}
 
 	router.GET("/", func(c *gin.Context) {
@@ -59,10 +61,14 @@ func main() {
 			log.Fatal(err)
 		}
 
+		base := dir == "/pictures"
+
 		galleryData = GalleryData{
 			Images:      images,
 			Directories: subdirs,
 			Title:       dir,
+			Parent:      filepath.Dir(dir),
+			IsBase:      base,
 		}
 		tmpl.ExecuteTemplate(ctx.Writer, "gallery.html", galleryData)
 	})
@@ -86,11 +92,13 @@ func main() {
 		tmpl.ExecuteTemplate(ctx.Writer, "settings.html", nil)
 	})
 
-	router.GET("/pic/*name", func(ctx *gin.Context) {
-		name := ctx.Param("name")
+	router.GET("/pic/*path", func(ctx *gin.Context) {
+		path := ctx.Param("path")
+		name := filepath.Base(path)
+		dir := filepath.Dir(path)
 		tmpl.ExecuteTemplate(ctx.Writer, "pic.html", Image{
 			Name: name,
-			Path: name,
+			Path: dir,
 		})
 	})
 

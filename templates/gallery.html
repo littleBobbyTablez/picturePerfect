@@ -1,46 +1,41 @@
-<div class="flex">
-    <div class="m-3">Size:</div>
-    <div
-        class="m-3"
-        _="on click remove .basis-md from .pic then remove .basis-xl from .pic then add .basis-xs to .pic end"
-    >
-        S
-    </div>
-    <div
-        class="m-3"
-        _="on click remove .basis-xs from .pic then remove .basis-xl from .pic then add .basis-md to .pic end"
-    >
-        M
-    </div>
-    <div
-        class="m-3"
-        _="on click remove .basis-xs from .pic then remove .basis-md from .pic then add .basis-xl to .pic end"
-    >
-        L
-    </div>
-</div>
-<div class="flex flex-wrap justify-center">
-    {{range .Directories}}
-    <div class="pic m-3 basis-xs"
-        hx-get="/gallery{{.Path}}/{{.Name}}"
-        hx-target="#content"
-    >
+<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+    {{ if not .IsBase}}
+    <div>
         <svg
-            xmlns="http://www.w3.org/2000/svg"
+            xmlns="http://www.w3.org000/svg"
             fill="currentColor"
-            class="object-cover"
             viewBox="0 0 16 16"
+            class="object-cover object-center w-full h-40 max-w-full rounded-lg"
+            hx-get="/gallery{{.Parent}}"
+            hx-target="#content"
+        >
+            <path
+                fill-rule="evenodd"
+                d="M4.854 1.146a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 0 .708.708L4 2.707V12.5A2.5 2.5 0 0 0 6.5 15h8a.5.5 0 0 0 0-1h-8A1.5 1.5 0 0 1 5 12.5V2.707l3.146 3.147a.5.5 0 1 0 .708-.708z"
+            />
+        </svg>
+    </div>
+    {{ end }} {{range .Directories}}
+    <div>
+        <svg
+
+            fill="currentColor"
+            viewBox="0 0 16 16"
+            class="object-cover object-center w-full h-40 max-w-full rounded-lg"
+            hx-get="/gallery{{.Path}}/{{.Name}}"
+            hx-target="#content"
         >
             <path
                 d="M.54 3.87.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3h3.982a2 2 0 0 1 1.992 2.181l-.637 7A2 2 0 0 1 13.174 14H2.826a2 2 0 0 1-1.991-1.819l-.637-7a2 2 0 0 1 .342-1.31zM2.19 4a1 1 0 0 0-.996 1.09l.637 7a1 1 0 0 0 .995.91h10.348a1 1 0 0 0 .995-.91l.637-7A1 1 0 0 0 13.81 4zm4.69-1.707A1 1 0 0 0 6.172 2H2.5a1 1 0 0 0-1 .981l.006.139q.323-.119.684-.12h5.396z"
             />
+            <!--<text y=10 class="p-10 font-bold">{{.Name}}<text/>-->
         </svg>
-        <span class="font-bold flex justify-center">{{.Name}}</span>
     </div>
     {{end}} {{range .Images}}
-    <div class="pic m-3 basis-xs border border-slate-800">
+    <!--<div class="pic m-3 basis-xs flex border border-slate-800">-->
+    <div>
         <img
-            class=""
+            class="object-cover object-center w-full h-40 max-w-full rounded-lg"
             src="{{.Path}}/{{.Name}}"
             alt="{{.Name}}"
             hx-get="/pic{{.Path}}/{{.Name}}"
