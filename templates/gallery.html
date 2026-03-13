@@ -1,11 +1,11 @@
-<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6">
     {{ if not .IsBase}}
-    <div>
+   <div class="w-full h-60 object-cover rounded-lg overflow-hidden m-3">
         <svg
             xmlns="http://www.w3.org000/svg"
             fill="currentColor"
             viewBox="0 0 16 16"
-            class="object-cover object-center w-full h-40 max-w-full rounded-lg"
+            class="object-cover w-full h-full"
             hx-get="/gallery{{.Parent}}"
             hx-target="#content"
         >
@@ -16,12 +16,11 @@
         </svg>
     </div>
     {{ end }} {{range .Directories}}
-    <div>
+    <div class="w-full h-60 object-cover rounded-lg overflow-hidden m-3">
         <svg
-
             fill="currentColor"
             viewBox="0 0 16 16"
-            class="object-cover object-center w-full h-40 max-w-full rounded-lg"
+            class="object-cover w-full h-full"
             hx-get="/gallery{{.Path}}/{{.Name}}"
             hx-target="#content"
         >
@@ -33,9 +32,9 @@
     </div>
     {{end}} {{range .Images}}
     <!--<div class="pic m-3 basis-xs flex border border-slate-800">-->
-    <div>
+    <div class="border border-2 object-cover w-full h-60 rounded-lg overflow-hidden">
         <img
-            class="object-cover object-center w-full h-40 max-w-full rounded-lg"
+            class="object-cover w-full h-full"
             src="{{.Path}}/{{.Name}}"
             alt="{{.Name}}"
             hx-get="/pic{{.Path}}/{{.Name}}"

@@ -1,3 +1,4 @@
+.DS_Store
 /node_modules
 /tmp
 package.json
@@ -5,3 +6,5 @@ package-lock.json
 .idea/
 /pictures
 picture_perfect
+simple.sqlite
+pictures.db
